@@ -1,0 +1,5 @@
+flask
+twilio
+pandas
+selenium
+webdriver-manager
