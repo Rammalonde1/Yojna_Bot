@@ -3,3 +3,6 @@ twilio
 pandas
 selenium
 webdriver-manager
+google-generativeai
+pypdf
+gunicorn
