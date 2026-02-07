@@ -1,144 +1,103 @@
 import os
 import pandas as pd
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from twilio.twiml.messaging_response import MessagingResponse
-from thefuzz import process, fuzz # For smart keyword matching
-import google.generativeai as genai
+from thefuzz import process, fuzz
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
 DB_FILE = "schemes_database.csv"
-GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY") # Reads from Render Environment
+PDF_FOLDER = "applications"
 
-# Initialize AI if key exists
-if GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    print("[SYSTEM] AI Mode Enabled ✅")
-else:
-    model = None
-    print("[SYSTEM] AI Key not found. Running in Fuzzy Match Mode (Robust) ⚠️")
+# Create folder for PDFs if not exists
+if not os.path.exists(PDF_FOLDER):
+    os.makedirs(PDF_FOLDER)
 
 def get_db():
-    """Robust Database Loader"""
-    try:
-        # Check if file exists
-        if not os.path.exists(DB_FILE):
-            return None
-        return pd.read_csv(DB_FILE)
-    except Exception as e:
-        print(f"[ERROR] DB Load Failed: {e}")
-        return None
+    if not os.path.exists(DB_FILE): return None
+    return pd.read_csv(DB_FILE)
 
-def fuzzy_search(query, df):
-    """
-    Searches the database even if spelling is wrong.
-    e.g., "txtile" will find "Textile"
-    """
-    results = []
+def generate_pdf(scheme_name, user_phone):
+    """Generates a simple Application Receipt PDF"""
+    filename = f"Application_{user_phone[-4:]}.pdf"
+    filepath = os.path.join(PDF_FOLDER, filename)
     
-    # 1. Search in Title
-    titles = df['title'].tolist()
-    # Find top 3 matches with > 60% similarity
-    matches = process.extract(query, titles, limit=3, scorer=fuzz.partial_ratio)
+    c = canvas.Canvas(filepath, pagesize=letter)
+    c.drawString(100, 750, "GOVERNMENT SCHEME APPLICATION RECEIPT")
+    c.drawString(100, 730, "------------------------------------------------------")
+    c.drawString(100, 700, f"Applicant Mobile: {user_phone}")
+    c.drawString(100, 680, f"Scheme Applied For: {scheme_name}")
+    c.drawString(100, 660, "Status: Application Generated via Yojna-GPT")
+    c.drawString(100, 640, "Date: 2026-02-07")
+    c.drawString(100, 600, "Please submit this receipt to your local nodal officer.")
+    c.save()
     
-    for match, score in matches:
-        if score > 60:
-            row = df[df['title'] == match].iloc[0]
-            results.append(row)
-            
-    # 2. If low results, Search in Industry
-    if len(results) < 2:
-        industries = df['industry'].unique().tolist()
-        ind_matches = process.extract(query, industries, limit=2, scorer=fuzz.partial_ratio)
-        for match, score in ind_matches:
-            if score > 70:
-                rows = df[df['industry'] == match]
-                for _, row in rows.iterrows():
-                    results.append(row)
-    
-    # Remove duplicates
-    unique_results = []
-    seen_ids = set()
-    for item in results:
-        if item['id'] not in seen_ids:
-            unique_results.append(item)
-            seen_ids.add(item['id'])
-            
-    return unique_results[:3] # Return top 3 unique
+    return filename
 
 @app.route("/", methods=['GET'])
 def health_check():
-    """Browser Check - Call this to wake up the server"""
-    return "Yojna-GPT is Live and Ready! 🚀"
+    return "Yojna-GPT is Running 🚀"
+
+# --- NEW: ROUTE TO SERVE PDFS ---
+@app.route("/download/<filename>")
+def download_file(filename):
+    return send_from_directory(PDF_FOLDER, filename)
 
 @app.route("/whatsapp", methods=['POST'])
 def whatsapp_reply():
     incoming_msg = request.values.get('Body', '').strip()
-    sender = request.values.get('From', '')
-    print(f"[MSG] From: {sender} | Content: {incoming_msg}")
-
+    sender = request.values.get('From', '').replace("whatsapp:", "")
+    
     resp = MessagingResponse()
     msg = resp.message()
-    
     df = get_db()
-    
-    if df is None or df.empty:
-        msg.body("⚠️ System Maintenance: Database is currently reloading. Please try in 2 mins.")
-        return str(resp)
 
-    # --- MODE 1: GREETING ---
-    if incoming_msg.lower() in ['hi', 'hello', 'start', 'test']:
-        msg.body("🇮🇳 *Namaste! Welcome to Yojna-GPT Pro.*\n\n"
-                 "I can help you find subsidies for your business.\n"
-                 "Try searching for:\n"
-                 "👉 *Textile*\n"
-                 "👉 *Farming / Solar*\n"
-                 "👉 *Business Loan*\n"
-                 "👉 *Women*")
-        return str(resp)
-
-    # --- MODE 2: AI SEARCH (If API Key is set) ---
-    if model:
+    # --- APPLY LOGIC ---
+    if incoming_msg.lower().startswith("apply"):
         try:
-            # Create a mini-context for the AI
-            context = df.to_string(index=False)
-            prompt = f"""
-            Act as an expert Indian Government Scheme consultant.
-            Here is the database of schemes:
-            {context}
+            # User sent "Apply 1" -> We get ID 1
+            scheme_id = int(incoming_msg.split(" ")[1])
             
-            User Query: "{incoming_msg}"
+            # Find scheme name
+            row = df[df['id'] == scheme_id].iloc[0]
+            scheme_name = row['title']
             
-            Task:
-            1. Find the best matching schemes from the list above.
-            2. Explain WHY it fits their query in 1 sentence.
-            3. Provide the Link.
-            4. If nothing matches perfectly, suggest the closest one.
-            """
-            response = model.generate_content(prompt)
-            msg.body(response.text)
+            # Generate PDF
+            pdf_filename = generate_pdf(scheme_name, sender)
+            
+            # Create Public Link (Dynamic based on where it is hosted)
+            # In production, use your actual Render URL
+            host_url = request.host_url # e.g., https://yojna-gpt.onrender.com/
+            pdf_link = f"{host_url}download/{pdf_filename}"
+            
+            msg.body(f"✅ *Application Generated!*\n\n"
+                     f"We have created your application for *{scheme_name}*.\n"
+                     f"Download it here: {pdf_link}")
             return str(resp)
+            
         except Exception as e:
-            print(f"[AI Error] {e}. Falling back to Fuzzy Search.")
-            # Fall through to Fuzzy Search if AI fails
+            msg.body("❌ Error. To apply, send 'Apply' followed by the ID number. Example: *Apply 1*")
+            return str(resp)
 
-    # --- MODE 3: FUZZY SEARCH (Backup / Default) ---
-    results = fuzzy_search(incoming_msg, df)
-    
-    if results:
-        reply = f"🔍 I found *{len(results)} matches* for '{incoming_msg}':\n\n"
-        for row in results:
-            reply += (f"📌 *{row['title']}*\n"
-                      f"🏭 {row['industry']}\n"
-                      f"💰 *Benefit:* {row['subsidy_amount']}\n"
-                      f"🔗 {row['link']}\n\n")
-        reply += "Reply with another industry to search again."
+    # --- SEARCH LOGIC (Same as before) ---
+    results = []
+    # Simple search for demo purposes (Fuzzy logic is heavier, keeping it simple for stability)
+    if df is not None:
+        results = df[df['title'].str.lower().str.contains(incoming_msg.lower()) | 
+                     df['industry'].str.lower().str.contains(incoming_msg.lower())]
+
+    if not results.empty:
+        reply = f"🔍 Found {len(results)} schemes:\n\n"
+        for _, row in results.iterrows():
+            reply += (f"📌 *ID {row['id']}: {row['title']}*\n"
+                      f"💰 {row['subsidy_amount']}\n"
+                      f"👉 To Apply, reply: *Apply {row['id']}*\n\n")
         msg.body(reply)
     else:
-        msg.body(f"❌ No direct matches for '{incoming_msg}'.\n"
-                 "Try keywords like: *Loan, Startup, Manufacturing*")
+        msg.body("👋 Welcome! Search by industry (e.g., 'Textile') or type 'Hi' for menu.")
 
     return str(resp)
 
