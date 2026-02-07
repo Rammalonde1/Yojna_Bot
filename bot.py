@@ -1,68 +1,73 @@
+import os
+import pandas as pd
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
-import pandas as pd
-import os
+import google.generativeai as genai
+
+# --- CONFIGURATION ---
+# 1. Get a Free API Key from: https://aistudio.google.com/app/apikey
+# 2. Set it here or in your environment variables
+os.environ["GEMINI_API_KEY"] = "YOUR_API_KEY_HERE"
+
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 app = Flask(__name__)
-
-# CONFIG
 DB_FILE = "schemes_database.csv"
 
-def load_data():
-    """Safely loads the CSV file."""
-    if os.path.exists(DB_FILE):
-        return pd.read_csv(DB_FILE)
-    else:
-        return pd.DataFrame() # Return empty if file missing
+def get_context():
+    """Reads the CSV and converts it into a string for the AI to read."""
+    if not os.path.exists(DB_FILE):
+        return "No schemes database found."
+    
+    df = pd.read_csv(DB_FILE)
+    # Convert dataframe to a simplified string format to save tokens
+    # Format: "Scheme Name: [Name], Industry: [Ind], Benefit: [Benefit]"
+    context_str = ""
+    for index, row in df.iterrows():
+        context_str += f"- ID: {index+1}, Name: {row['title']}, Desc: {row['description']}\n"
+    return context_str
 
 @app.route("/whatsapp", methods=['POST'])
 def whatsapp_reply():
-    incoming_msg = request.values.get('Body', '').strip().lower()
+    user_msg = request.values.get('Body', '').strip()
     sender = request.values.get('From', '')
     
-    print(f"Message from {sender}: {incoming_msg}")
+    print(f"[*] AI Query from {sender}: {user_msg}")
     
     resp = MessagingResponse()
     msg = resp.message()
     
-    df = load_data()
+    # 1. Prepare the AI Prompt
+    schemes_data = get_context()
     
-    # GREETING
-    if incoming_msg in ['hi', 'hello', 'start', 'menu']:
-        msg.body("🇮🇳 *Namaste! Welcome to Yojna-GPT.*\n\n"
-                 "I can help you find government subsidies.\n"
-                 "Type a keyword to search, for example:\n"
-                 "- *Textile*\n"
-                 "- *Agriculture*\n"
-                 "- *Loan*\n"
-                 "- *Solar*")
-        return str(resp)
+    system_prompt = f"""
+    You are 'Yojna-GPT', an expert Indian Government Scheme Consultant.
     
-    # SEARCH LOGIC
-    if df.empty:
-        msg.body("⚠️ System Update: Database is currently being built. Please try again later.")
-        return str(resp)
+    Here is the database of available schemes:
+    {schemes_data}
     
-    # Search in 'title' or 'description' columns
-    results = df[df['title'].str.lower().str.contains(incoming_msg) | 
-                 df['description'].str.lower().str.contains(incoming_msg)]
+    User Query: "{user_msg}"
     
-    if not results.empty:
-        # Return top 3 results
-        reply = f"✅ I found *{len(results)}* schemes for '{incoming_msg}'. Here are the top 3:\n\n"
-        
-        for i, row in results.head(3).iterrows():
-            title = row['title']
-            desc = row['description'].replace(" | ", " ") # Clean up text
-            reply += f"🔹 *{title}*\n_{desc[:100]}..._\n\n"
-            
-        reply += "Reply with another keyword to search again."
-        msg.body(reply)
-    else:
-        msg.body(f"❌ No schemes found for '{incoming_msg}'.\nTry broader terms like 'Business' or 'Loan'.")
+    Instructions:
+    1. Analyze the user's query (industry, location, needs).
+    2. Recommend the best matching schemes from the database above.
+    3. If no scheme fits perfectly, suggest the closest one.
+    4. Keep the answer friendly, professional, and under 150 words.
+    5. Format the output with emojis and bullet points for WhatsApp.
+    6. If the database is empty, tell them to wait for the scraping engine to finish.
+    """
+    
+    try:
+        # 2. Ask the AI
+        response = model.generate_content(system_prompt)
+        ai_reply = response.text
+        msg.body(ai_reply)
+    except Exception as e:
+        msg.body("⚠️ Sorry, my AI brain is currently overloaded. Please try again in 1 minute.")
+        print(f"[!] AI Error: {e}")
 
     return str(resp)
 
 if __name__ == "__main__":
-    # Standard Flask Run
     app.run(port=5000, debug=True)
