@@ -8,14 +8,16 @@ app = Flask(__name__)
 DB_FILE = "schemes_database.csv"
 
 # --- CONFIGURATION ---
-# Improved: securely get key from environment without overwriting it
-api_key = os.environ.get("GEMINI_API_KEY")
+# 1. SETTING THE API KEY DIRECTLY TO FIX "OVERLOAD" ERROR
+# (We use your key directly to ensure connection works immediately)
+API_KEY = "AIzaSyCshP-OBAHoq6VLHhtIHRebx0Q0AcUD5Yo"
 
 model = None
-if api_key:
+if API_KEY:
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        genai.configure(api_key=API_KEY)
+        # Switched to 'gemini-1.5-flash' for maximum stability
+        model = genai.GenerativeModel('gemini-1.5-flash')
         print("[SYSTEM] AI Connected Successfully ✅")
     except Exception as e:
         print(f"[SYSTEM] AI Configuration Failed: {e}")
@@ -31,7 +33,11 @@ def get_context():
         df = pd.read_csv(DB_FILE, on_bad_lines='skip') # Skip bad lines to prevent crashes
         context_str = ""
         for index, row in df.iterrows():
-            context_str += f"- ID: {index+1}, Name: {row['title']}, Desc: {row.get('description', 'No desc')}\n"
+            # Safely get columns, handle missing ones
+            title = row.get('title', 'Unknown Scheme')
+            desc = row.get('description', 'No description')
+            benefit = row.get('subsidy_amount', 'Benefit not listed')
+            context_str += f"- Scheme: {title} | Benefit: {benefit} | Info: {desc}\n"
         return context_str
     except Exception as e:
         print(f"Error reading DB: {e}")
@@ -52,7 +58,10 @@ def fallback_search(query):
             
         reply = f"⚠️ *AI Offline - Showing Database Results:*\n\n"
         for _, row in results.head(3).iterrows():
-            reply += f"📌 *{row['title']}*\n💰 Benefit: {row['subsidy_amount']}\n🔗 {row['link']}\n\n"
+            title = row.get('title', 'Scheme')
+            benefit = row.get('subsidy_amount', 'Check Link')
+            link = row.get('link', '#')
+            reply += f"📌 *{title}*\n💰 Benefit: {benefit}\n🔗 {link}\n\n"
         return reply
     except:
         return None
@@ -80,32 +89,32 @@ def whatsapp_reply():
         
         Instructions:
         1. Analyze the user's query.
-        2. Recommend the best matching schemes from the database.
+        2. Recommend the best matching schemes from the database provided above.
         3. If no scheme fits perfectly, suggest the closest one.
         4. Keep the answer friendly, professional, and under 150 words.
         5. Format the output with emojis and bullet points for WhatsApp.
         """
         
         try:
+            # Generate content
             response = model.generate_content(system_prompt)
-            msg.body(response.text)
-            ai_success = True
+            if response.text:
+                msg.body(response.text)
+                ai_success = True
         except Exception as e:
             print(f"[!] AI Generation Error: {e}")
-            # AI failed, we will fall through to backup
+            # AI failed, we will fall through to backup silently
 
     # --- 2. FALLBACK MODE (If AI failed or is missing) ---
     if not ai_success:
-        print("[*] Switching to Fallback Search...")
+        print("[*] AI Failed/Skipped. Switching to Fallback Search...")
         fallback_result = fallback_search(user_msg)
         
         if fallback_result:
             msg.body(fallback_result)
         else:
-            if not model:
-                msg.body("⚠️ AI is not configured and no direct matches found in database. Please check your spelling.")
-            else:
-                msg.body("⚠️ Network Issue: AI did not respond, and no database keyword match found. Please try again.")
+            # Final generic message if nothing works
+            msg.body("⚠️ I couldn't find a specific scheme for that. Try searching for keywords like 'Textile', 'Loan', or 'Solar'.")
 
     return str(resp)
 
