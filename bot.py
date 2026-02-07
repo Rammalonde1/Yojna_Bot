@@ -8,17 +8,16 @@ app = Flask(__name__)
 DB_FILE = "schemes_database.csv"
 
 # --- CONFIGURATION ---
-# 1. SETTING THE API KEY DIRECTLY TO FIX "OVERLOAD" ERROR
-# (We use your key directly to ensure connection works immediately)
+# 1. SETTING THE API KEY DIRECTLY
 API_KEY = "AIzaSyCshP-OBAHoq6VLHhtIHRebx0Q0AcUD5Yo"
 
 model = None
 if API_KEY:
     try:
         genai.configure(api_key=API_KEY)
-        # Switched to 'gemini-1.5-flash' for maximum stability
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        print("[SYSTEM] AI Connected Successfully ✅")
+        # CHANGED: Switched to 'gemini-pro' which is the standard stable model
+        model = genai.GenerativeModel('gemini-pro')
+        print("[SYSTEM] AI Connected Successfully (Model: gemini-pro) ✅")
     except Exception as e:
         print(f"[SYSTEM] AI Configuration Failed: {e}")
 else:
