@@ -23,3 +23,19 @@ Ministry Of Defence,RMEWF-Financial Assistance For Vocational Training Of Widows
 Quick Links,Quick Links | About Us | Contact Us | Screen Reader | Accessibility Statement | Frequently Asked Questions | Disclaimer | Terms & Conditions | Dashboard,General,https://www.myscheme.gov.in/search
 Useful Links,Useful Links,General,https://www.myscheme.gov.in/search
 Get in touch,"Get in touch | 4th Floor, NeGD, Electronics Niketan, 6 CGO Complex, Lodhi Road, New Delhi - 110003, India | support-myscheme[at]digitalindia[dot]gov[dot]in | (011) 24303714 (9:00 AM to 5:30 PM)",General,https://www.myscheme.gov.in/search
+id,title,industry,subsidy_amount,link,description
+1,Prime Minister Employment Generation Programme (PMEGP),Manufacturing | Service,Up to 35% Subsidy (Max 50 Lakhs),https://kviconline.gov.in/,"Loan subsidy for new businesses in rural/urban areas. Best for small factories."
+2,PM Vishwakarma Yojana,Artisan | Carpenter | Blacksmith,Loan up to 3 Lakhs @ 5% Interest,https://pmvishwakarma.gov.in/,"Collateral-free loan for 18 traditional trades like carpenters, tailors, and blacksmiths."
+3,MUDRA Loan (Tarun),Business | General,Loan up to 10 Lakhs,https://www.mudra.org.in/,"Funding for expansion of existing business units. No collateral required."
+4,Stand-Up India Scheme,SC/ST | Women Entrepreneur,Loan 10 Lakhs to 1 Crore,https://www.standupmitra.in/,"Bank loan for Greenfield projects set up by SC/ST or Women borrowers."
+5,Production Linked Incentive (PLI) for Textiles,Textile,Incentives on Turnover,https://pli.texmin.gov.in/,"Financial incentives for manufacturing MMF fabrics and technical textiles."
+6,Technology Upgradation Fund Scheme (ATUFS),Textile,15% Capital Subsidy,https://txcindia.gov.in/,"One-time capital subsidy for eligible benchmarked machinery for textile units."
+7,PM Kisan Sampada Yojana,Agriculture | Food Processing,Grant up to 5 Crores,https://mofpi.nic.in/,"For setting up Mega Food Parks, Cold Chains, and Agro-processing clusters."
+8,Credit Guarantee Scheme (CGTMSE),MSME | General,Guarantee for Loans up to 5 Crore,https://www.cgtmse.in/,"Collateral-free credit for Micro and Small Enterprises."
+9,FAME II Subsidy,EV | Auto,Up to 40% on vehicle cost,https://fame2.heavyindustries.gov.in/,"Subsidy for buying Electric Vehicles (2W/3W/4W) for commercial use."
+10,Start-up India Seed Fund,Startup | IT,Grant up to 20 Lakhs,https://seedfund.startupindia.gov.in/,"Financial assistance to startups for proof of concept, prototype development."
+11,National Livestock Mission,Agriculture | Poultry,50% Subsidy up to 50 Lakhs,https://nlm.udyamimitra.in/,"Subsidy for Goat, Sheep, Poultry, and Piggery farming infrastructure."
+12,Ayushman Bharat Hospital Fund,Healthcare,Low Interest Loans,https://pmjay.gov.in/,"Financing for setting up hospitals in Tier-2 and Tier-3 cities."
+13,Solar Rooftop Subsidy,Solar | Energy,Subsidy up to 40%,https://solarrooftop.gov.in/,"Subsidy for installation of solar panels on residential and factory rooftops."
+14,Mahila Samman Savings Certificate,Women,7.5% Fixed Interest,https://www.indiapost.gov.in/,"One-time small savings scheme for women and girls."
+15,Ambedkar Social Innovation Mission,SC | Student,Equity Funding up to 30 Lakhs,https://asim.vnest.in/,"Venture capital fund for SC entrepreneurs aimed at innovation."
