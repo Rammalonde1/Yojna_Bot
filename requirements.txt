@@ -1,8 +1,8 @@
 flask
 twilio
 pandas
-selenium
-webdriver-manager
 google-generativeai
 pypdf
 gunicorn
+thefuzz
+python-levenshtein
