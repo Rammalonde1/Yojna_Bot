@@ -6,3 +6,4 @@ pypdf
 gunicorn
 thefuzz
 python-levenshtein
+reportlab
