@@ -18,8 +18,7 @@ PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER):
     os.makedirs(PDF_FOLDER)
 
-# --- 1. THE INTERNAL DATABASE ---
-# I added 'mobile', 'cloud', 'internet' tags here so they ALWAYS work.
+# --- 1. INTERNAL DATABASE (Always works) ---
 SCHEMES_DB = [
     {"id": 1, "title": "PMEGP Loan", "tags": "business factory loan manufacturing money capital fund", "desc": "Subsidy up to 35% on loans up to 50 Lakhs."},
     {"id": 2, "title": "MUDRA Loan (Tarun)", "tags": "business shop trade expansion vendor general", "desc": "Loan up to 10 Lakhs without collateral."},
@@ -40,15 +39,23 @@ SCHEMES_DB = [
     {"id": 17, "title": "FAME II EV Subsidy", "tags": "electric vehicle car bike scooter ev", "desc": "Subsidy on purchase of electric vehicles."}
 ]
 
-# --- 2. SETUP AI (With Auto-Switching) ---
+# --- 2. SETUP AI (Self-Healing Connection) ---
 model = None
 if API_KEY:
-    try:
-        genai.configure(api_key=API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        print("[SYSTEM] AI Connected ✅")
-    except:
-        print("[SYSTEM] AI Failed. Defaulting to internal DB.")
+    genai.configure(api_key=API_KEY)
+    # Try models in order until one works
+    model_list = ['gemini-pro', 'gemini-1.5-flash', 'gemini-1.0-pro']
+    
+    for m_name in model_list:
+        try:
+            print(f"[SYSTEM] Attempting to connect to {m_name}...")
+            test_model = genai.GenerativeModel(m_name)
+            # We don't generate here to save time, just binding
+            model = test_model
+            print(f"[SYSTEM] AI Connected Successfully using {m_name} ✅")
+            break # Stop if successful
+        except Exception as e:
+            print(f"[SYSTEM] Failed to connect to {m_name}: {e}")
 
 # --- 3. PROFESSIONAL PDF ENGINE ---
 def generate_pro_pdf(scheme_name, user_phone, scheme_id):
@@ -118,9 +125,8 @@ def whatsapp_reply():
     resp = MessagingResponse()
     reply = resp.message()
     
-    # 1. WELCOME MESSAGE (PRIORITY 1)
-    # Moved to top so it ALWAYS works
-    if msg.lower() in ['hi', 'hello', 'start', 'menu', 'h', 'hey']:
+    # GREETING
+    if msg.lower() in ['hi', 'hello', 'start', 'menu', 'hey']:
         reply.body("🇮🇳 *Welcome to Yojna-GPT*\n"
                    "The Artificial Intelligence for Government Schemes.\n\n"
                    "🤖 *Ask me anything like:*\n"
@@ -130,7 +136,7 @@ def whatsapp_reply():
                    "📂 *Or type:* 'Status' to check application.")
         return str(resp)
 
-    # 2. APPLY COMMAND (Generate PDF)
+    # APPLY
     if msg.lower().startswith("apply"):
         try:
             scheme_id = int(msg.split()[1])
@@ -148,15 +154,14 @@ def whatsapp_reply():
             reply.body("❌ Usage: Type 'Apply' followed by the ID number (e.g., *Apply 5*)")
         return str(resp)
 
-    # 3. SEARCH (Internal DB)
+    # SEARCH (Internal DB)
     results = []
     query = msg.lower()
     for s in SCHEMES_DB:
-        # Matches if query word is in tags (e.g., 'mobile' in 'startup... mobile')
-        # OR if query is 'startup' and matches 'startup'
         if any(tag in query for tag in s['tags'].split()) or query in s['tags']:
             results.append(s)
 
+    # AI GENERATION
     if results:
         txt = f"🔍 *Found {len(results)} Schemes:*\n\n"
         for item in results[:3]:
@@ -166,26 +171,18 @@ def whatsapp_reply():
         reply.body(txt)
         return str(resp)
 
-    # 4. AI BRAIN (Fallback with Error Handling)
-    # We catch errors so the user NEVER sees "Network Error"
+    # AI FALLBACK
     if model:
         try:
-            prompt = f"Act as an Indian Govt Scheme Expert. Briefly explain a scheme for: '{msg}'. If none exists, give general advice."
+            # Short prompt to ensure it fits WhatsApp limits
+            prompt = f"Act as an Indian Govt Scheme Expert. Explain '{msg}' in 2 short sentences. If it's a general greeting, respond politely."
             ai_resp = model.generate_content(prompt)
             reply.body(f"🤖 *AI Assistant:*\n\n{ai_resp.text}")
-            return str(resp)
         except Exception as e:
             print(f"AI Failed: {e}")
-            pass # Fail silently to the final message
-    
-    # 5. FINAL MESSAGE (If everything fails)
-    reply.body(f"🤖 *AI Assistant (Offline Mode):*\n\n"
-               "I couldn't find a specific scheme for that right now. \n"
-               "Please try broad categories like:\n"
-               "- Loan\n"
-               "- Farming\n"
-               "- Business\n"
-               "- Student")
+            reply.body("⚠️ Network Error. Try searching for 'Loan', 'Farm', or 'Textile'.")
+    else:
+        reply.body("⚠️ AI is offline. Try searching for 'Loan', 'Farm', or 'Textile'.")
 
     return str(resp)
 
