@@ -17,7 +17,7 @@ API_KEY = "AIzaSyCshP-OBAHoq6VLHhtIHRebx0Q0AcUD5Yo"
 PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER): os.makedirs(PDF_FOLDER)
 
-# --- INTERNAL DATABASE ---
+# --- INTERNAL DATABASE (50+ Schemes) ---
 SCHEMES_DB = [
     {"id": 1, "title": "PMEGP Loan", "cat": "Business", "tags": "factory manufacturing loan business money fund", "desc": "Subsidy up to 35% on loans up to 50 Lakhs."},
     {"id": 2, "title": "MUDRA Loan (Shishu)", "cat": "Business", "tags": "small shop vendor startup store", "desc": "Loan up to ₹50,000 for startups."},
@@ -68,20 +68,17 @@ def generate_pdf(type, data_dict):
 
 # --- FAIL-SAFE AI ---
 def get_ai_reply(query):
-    # 1. Try Google AI
     try:
         genai.configure(api_key=API_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         res = model.generate_content(f"Explain Indian Govt Scheme for '{query}' in 2 sentences.")
         return f"🤖 *AI Insight:*\n{res.text}"
-    except Exception as e:
-        print(f"[LOG] AI Failed: {e}") # This prints to Render Logs
-    
-    # 2. Smart Backup (If AI fails)
-    q = query.lower()
-    if "loan" in q or "fund" in q: return "🤖 *AI (Backup):* For funding, check **PMEGP** (ID 1) or **Mudra Loan** (ID 2)."
-    if "student" in q: return "🤖 *AI (Backup):* Students can check **Vidya Lakshmi Loans** (ID 15)."
-    return "🤖 *AI (Backup):* Network busy. Try searching 'Loan', 'Farm', or 'Solar'."
+    except:
+        # Smart Backup
+        q = query.lower()
+        if "loan" in q or "fund" in q: return "🤖 *AI (Backup):* For funding, check **PMEGP** (ID 1) or **Mudra Loan** (ID 2)."
+        if "student" in q: return "🤖 *AI (Backup):* Students can check **Vidya Lakshmi Loans** (ID 15)."
+        return "🤖 *AI (Backup):* Network busy. Try searching 'Loan', 'Farm', or 'Solar'."
 
 # --- ROUTER ---
 @app.route("/", methods=['GET'])
@@ -95,10 +92,12 @@ def whatsapp():
     try:
         msg = request.values.get('Body', '').strip().lower()
         sender = request.values.get('From', '').replace("whatsapp:", "")
+        print(f"[*] Msg from {sender}: {msg}")
+        
         resp = MessagingResponse()
         reply = resp.message()
 
-        # 1. PRIORITY GREETING (No AI)
+        # 1. PRIORITY GREETING
         if msg in ['hi', 'hello', 'menu', 'start', 'help', 'hey', 'h']:
             reply.body("🇮🇳 *Welcome to Yojna-GPT Enterprise*\n\n"
                        "🔥 *Menu:*\n"
@@ -109,13 +108,14 @@ def whatsapp():
                        "5️⃣ *@Share* : Share Bot\n"
                        "6️⃣ *@Bank* : Find Banks\n\n"
                        "🔍 *Search:* 'Textile', 'Solar', 'Loan'")
-            return str(resp)
+            # FORCE XML HEADER
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
         # 2. FEATURES
         if msg.startswith("@card"):
             pdf = generate_pdf("Card", {"phone": sender})
             reply.body(f"💳 *ID Card Generated!*\n⬇️ {request.host_url}download/{pdf}")
-            return str(resp)
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
         if msg.startswith("@calc"):
             try:
@@ -123,7 +123,7 @@ def whatsapp():
                 reply.body(f"💰 *Subsidy Calc*\nLoan: ₹{amt:,}\nSubsidy (35%): ₹{int(amt*0.35):,}\nRepayable: ₹{int(amt*0.65):,}")
             except:
                 reply.body("❌ Usage: @Calc <Amount>")
-            return str(resp)
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
         if msg.startswith("@emi"):
             try:
@@ -132,19 +132,11 @@ def whatsapp():
                 reply.body(f"🧮 *EMI Calc*\nLoan: ₹{amt:,}\nTenure: 5 Years\nMonthly EMI: ₹{int(emi):,}")
             except:
                 reply.body("❌ Usage: @EMI <Amount>")
-            return str(resp)
-            
-        if msg.startswith("@bank"):
-            reply.body("🏦 *Nodal Banks:*\n1. SBI\n2. Bank of Baroda\n3. Canara Bank")
-            return str(resp)
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
         if msg.startswith("@docs"):
             reply.body("📂 *Docs Needed:*\n1. Aadhar\n2. PAN\n3. Udyam Reg\n4. Project Report")
-            return str(resp)
-
-        if msg.startswith("@share"):
-            reply.body("🔗 Share: https://wa.me/14155238886?text=Hi")
-            return str(resp)
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
         # 3. APPLY
         if msg.startswith("apply"):
@@ -158,26 +150,26 @@ def whatsapp():
                     reply.body("❌ Invalid ID.")
             except:
                 reply.body("❌ Usage: Apply <ID>")
-            return str(resp)
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
-        # 4. DATABASE SEARCH (No AI)
+        # 4. DATABASE SEARCH
         results = [s for s in SCHEMES_DB if msg in s['tags'] or msg in s['title'].lower()]
         if results:
             txt = f"🔍 *Found {len(results)} Schemes:*\n\n"
             for x in results[:3]:
                 txt += f"📌 *{x['title']}* (ID: {x['id']})\n💰 {x['desc']}\n👉 Reply *Apply {x['id']}*\n\n"
             reply.body(txt)
-            return str(resp)
+            return str(resp), 200, {'Content-Type': 'application/xml'}
 
         # 5. AI FALLBACK
         reply.body(get_ai_reply(msg))
-        return str(resp)
+        return str(resp), 200, {'Content-Type': 'application/xml'}
 
     except Exception as e:
-        # Emergency Response
+        print(f"Error: {e}")
         r = MessagingResponse()
         r.message("⚠️ System updating. Type 'Hi' to restart.")
-        return str(r)
+        return str(r), 200, {'Content-Type': 'application/xml'}
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
