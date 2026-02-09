@@ -18,10 +18,10 @@ PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER):
     os.makedirs(PDF_FOLDER)
 
-# --- 1. INTERNAL DATABASE (Always works) ---
+# --- INTERNAL DATABASE ---
 SCHEMES_DB = [
     {"id": 1, "title": "PMEGP Loan", "tags": "business factory loan manufacturing money capital fund", "desc": "Subsidy up to 35% on loans up to 50 Lakhs."},
-    {"id": 2, "title": "MUDRA Loan (Tarun)", "tags": "business shop trade expansion vendor general", "desc": "Loan up to 10 Lakhs without collateral."},
+    {"id": 2, "title": "MUDRA Loan", "tags": "business shop trade expansion vendor general", "desc": "Loan up to 10 Lakhs without collateral."},
     {"id": 3, "title": "Stand-Up India", "tags": "sc st women dalit business lady", "desc": "Loans from 10 Lakh to 1 Crore for greenfield projects."},
     {"id": 4, "title": "PM SVANidhi", "tags": "street vendor hawker thela loan mobile food truck", "desc": "Micro-credit up to 50,000 for street vendors."},
     {"id": 5, "title": "Startup India Seed Fund", "tags": "startup tech app innovation cloud software internet mobile new business", "desc": "Grant up to 20 Lakhs for proof of concept."},
@@ -39,25 +39,7 @@ SCHEMES_DB = [
     {"id": 17, "title": "FAME II EV Subsidy", "tags": "electric vehicle car bike scooter ev", "desc": "Subsidy on purchase of electric vehicles."}
 ]
 
-# --- 2. SETUP AI (Self-Healing Connection) ---
-model = None
-if API_KEY:
-    genai.configure(api_key=API_KEY)
-    # Try models in order until one works
-    model_list = ['gemini-pro', 'gemini-1.5-flash', 'gemini-1.0-pro']
-    
-    for m_name in model_list:
-        try:
-            print(f"[SYSTEM] Attempting to connect to {m_name}...")
-            test_model = genai.GenerativeModel(m_name)
-            # We don't generate here to save time, just binding
-            model = test_model
-            print(f"[SYSTEM] AI Connected Successfully using {m_name} ✅")
-            break # Stop if successful
-        except Exception as e:
-            print(f"[SYSTEM] Failed to connect to {m_name}: {e}")
-
-# --- 3. PROFESSIONAL PDF ENGINE ---
+# --- PDF ENGINE ---
 def generate_pro_pdf(scheme_name, user_phone, scheme_id):
     filename = f"Application_{scheme_id}_{user_phone[-4:]}.pdf"
     filepath = os.path.join(PDF_FOLDER, filename)
@@ -75,15 +57,13 @@ def generate_pro_pdf(scheme_name, user_phone, scheme_id):
     data = [
         ["APPLICANT DETAILS", ""],
         ["Mobile Number:", f"+{user_phone}"],
-        ["Application Date:", date_now],
+        ["Date:", date_now],
         ["Reference ID:", ref_no],
-        ["KYC Status:", "PENDING VERIFICATION"],
+        ["Status:", "PENDING VERIFICATION"],
         ["", ""],
-        ["SCHEME INFORMATION", ""],
+        ["SCHEME DETAILS", ""],
         ["Scheme Name:", scheme_name],
         ["Scheme Code:", f"SCH-{scheme_id:03d}"],
-        ["Department:", "Central Nodal Agency (CNA)"],
-        ["Current Status:", "Submitted for Review"]
     ]
 
     table = Table(data, colWidths=[150, 300])
@@ -92,26 +72,50 @@ def generate_pro_pdf(scheme_name, user_phone, scheme_id):
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
         ('BACKGROUND', (0,6), (-1,6), colors.darkblue),
         ('TEXTCOLOR', (0,6), (-1,6), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
         ('FONTSIZE', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 12),
-        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
         ('GRID', (0,0), (-1,-1), 1, colors.black)
     ])
     table.setStyle(style)
     elements.append(table)
-    
-    elements.append(Spacer(1, 40))
-    elements.append(Paragraph("<b>DISCLAIMER:</b> This is a computer-generated receipt. Please visit your nearest Common Service Centre (CSC) or Bank Branch to complete the process.", styles['Italic']))
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph("DISCLAIMER: Visit your nearest Common Service Centre (CSC) to submit documents.", styles['Italic']))
     
     doc.build(elements)
     return filename
 
-# --- 4. ROUTES ---
+# --- FAIL-SAFE AI ---
+def get_ai_reply(query):
+    """Tries Google AI. If it crashes, returns a Smart Backup Answer."""
+    try:
+        if API_KEY:
+            genai.configure(api_key=API_KEY)
+            # Try 1.5-flash first
+            try:
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(f"Explain Indian Govt Scheme '{query}' in 2 sentences.")
+                return f"🤖 *AI Assistant:*\n{response.text}"
+            except:
+                # Fallback to Pro
+                model = genai.GenerativeModel('gemini-pro')
+                response = model.generate_content(f"Explain Indian Govt Scheme '{query}' in 2 sentences.")
+                return f"🤖 *AI Assistant:*\n{response.text}"
+    except Exception as e:
+        print(f"AI Error: {e}")
+    
+    # HARDCODED BACKUP (If AI fails completely)
+    if "loan" in query or "money" in query:
+        return "🤖 *AI (Offline):* For financial needs, look at **PMEGP** (ID 1) or **Mudra Loan** (ID 2). They offer low-interest capital."
+    if "farm" in query or "land" in query:
+        return "🤖 *AI (Offline):* Farmers should check **PM Kisan** (ID 6) for income support or **KCC** (ID 7) for loans."
+    return "🤖 *AI (Offline):* I couldn't connect to the server, but you can browse our schemes by typing 'List'."
+
+
+# --- ROUTES ---
 @app.route("/", methods=['GET'])
 def health_check():
-    return "✅ Yojna-GPT Ultimate is Live"
+    return "✅ Yojna-GPT is Live"
 
 @app.route("/download/<filename>")
 def download_file(filename):
@@ -119,72 +123,65 @@ def download_file(filename):
 
 @app.route("/whatsapp", methods=['POST'])
 def whatsapp_reply():
-    msg = request.values.get('Body', '').strip()
-    sender = request.values.get('From', '').replace("whatsapp:", "")
-    
-    resp = MessagingResponse()
-    reply = resp.message()
-    
-    # GREETING
-    if msg.lower() in ['hi', 'hello', 'start', 'menu', 'hey']:
-        reply.body("🇮🇳 *Welcome to Yojna-GPT*\n"
-                   "The Artificial Intelligence for Government Schemes.\n\n"
-                   "🤖 *Ask me anything like:*\n"
-                   "• \"I want to open a textile factory\"\n"
-                   "• \"Loan for startup\"\n"
-                   "• \"Mobile shop loan\"\n\n"
-                   "📂 *Or type:* 'Status' to check application.")
+    try:
+        msg = request.values.get('Body', '').strip().lower()
+        sender = request.values.get('From', '').replace("whatsapp:", "")
+        
+        resp = MessagingResponse()
+        reply = resp.message()
+        
+        # 1. GREETING (Always works)
+        if msg in ['hi', 'hello', 'start', 'menu', 'h', 'hey']:
+            reply.body("🇮🇳 *Welcome to Yojna-GPT*\n\n"
+                       "🤖 *Ask me anything like:*\n"
+                       "• \"Loan for factory\"\n"
+                       "• \"Startup funding\"\n"
+                       "• \"Mobile shop loan\"\n\n"
+                       "📄 *To Apply:* Reply 'Apply <ID>'")
+            return str(resp)
+
+        # 2. APPLY COMMAND
+        if msg.startswith("apply"):
+            try:
+                scheme_id = int(msg.split()[1])
+                scheme = next((s for s in SCHEMES_DB if s['id'] == scheme_id), None)
+                if scheme:
+                    pdf = generate_pro_pdf(scheme['title'], sender, scheme_id)
+                    link = f"{request.host_url}download/{pdf}"
+                    reply.body(f"✅ *Application Generated!*\n"
+                               f"Scheme: {scheme['title']}\n"
+                               f"📄 *Download:* {link}")
+                else:
+                    reply.body("❌ Invalid ID.")
+            except:
+                reply.body("❌ Type 'Apply <ID>' (e.g., Apply 1)")
+            return str(resp)
+
+        # 3. INTERNAL SEARCH (Primary)
+        results = []
+        for s in SCHEMES_DB:
+            if any(tag in msg for tag in s['tags'].split()) or msg in s['tags']:
+                results.append(s)
+
+        if results:
+            txt = f"🔍 *Found {len(results)} Schemes:*\n\n"
+            for item in results[:3]:
+                txt += (f"📌 *ID {item['id']}: {item['title']}*\n"
+                        f"💰 {item['desc']}\n"
+                        f"👉 Reply *Apply {item['id']}*\n\n")
+            reply.body(txt)
+        else:
+            # 4. AI FALLBACK (With Safety Net)
+            ai_text = get_ai_reply(msg)
+            reply.body(ai_text)
+
         return str(resp)
 
-    # APPLY
-    if msg.lower().startswith("apply"):
-        try:
-            scheme_id = int(msg.split()[1])
-            scheme = next((s for s in SCHEMES_DB if s['id'] == scheme_id), None)
-            if scheme:
-                pdf = generate_pro_pdf(scheme['title'], sender, scheme_id)
-                link = f"{request.host_url}download/{pdf}"
-                reply.body(f"✅ *Application Generated!*\n\n"
-                           f"Scheme: {scheme['title']}\n"
-                           f"Ref ID: #YJ-{scheme_id}\n\n"
-                           f"📄 *Download Official Form:*\n{link}")
-            else:
-                reply.body("❌ Invalid Scheme ID.")
-        except:
-            reply.body("❌ Usage: Type 'Apply' followed by the ID number (e.g., *Apply 5*)")
-        return str(resp)
-
-    # SEARCH (Internal DB)
-    results = []
-    query = msg.lower()
-    for s in SCHEMES_DB:
-        if any(tag in query for tag in s['tags'].split()) or query in s['tags']:
-            results.append(s)
-
-    # AI GENERATION
-    if results:
-        txt = f"🔍 *Found {len(results)} Schemes:*\n\n"
-        for item in results[:3]:
-            txt += (f"📌 *ID {item['id']}: {item['title']}*\n"
-                    f"ℹ️ {item['desc']}\n"
-                    f"👉 Reply *Apply {item['id']}*\n\n")
-        reply.body(txt)
-        return str(resp)
-
-    # AI FALLBACK
-    if model:
-        try:
-            # Short prompt to ensure it fits WhatsApp limits
-            prompt = f"Act as an Indian Govt Scheme Expert. Explain '{msg}' in 2 short sentences. If it's a general greeting, respond politely."
-            ai_resp = model.generate_content(prompt)
-            reply.body(f"🤖 *AI Assistant:*\n\n{ai_resp.text}")
-        except Exception as e:
-            print(f"AI Failed: {e}")
-            reply.body("⚠️ Network Error. Try searching for 'Loan', 'Farm', or 'Textile'.")
-    else:
-        reply.body("⚠️ AI is offline. Try searching for 'Loan', 'Farm', or 'Textile'.")
-
-    return str(resp)
+    except Exception as e:
+        # CATCH-ALL: If code crashes, send this instead of silence
+        err_resp = MessagingResponse()
+        err_resp.message(f"⚠️ System Error. Please try typing 'Hi' again.")
+        return str(err_resp)
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
