@@ -7,5 +7,3 @@ gunicorn
 thefuzz
 python-levenshtein
 reportlab
-
-
