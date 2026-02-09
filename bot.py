@@ -1,14 +1,12 @@
 import os
 import datetime
 import random
-import math
 from flask import Flask, request, send_from_directory
 from twilio.twiml.messaging_response import MessagingResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 import google.generativeai as genai
 
@@ -124,21 +122,27 @@ def get_ai_response(prompt):
             model = genai.GenerativeModel('gemini-pro')
             res = model.generate_content(prompt)
             return f"🤖 *AI Insight:*\n{res.text}"
-    except:
+    except Exception as e:
+        print(f"AI Error: {e}")
         return None
 
 # --- 4. MAIN ROUTER ---
 @app.route("/", methods=['GET'])
-def health(): return "✅ Yojna-GPT Enterprise is Live"
+def health(): 
+    # Use this to verify the app is running in browser
+    return "✅ Yojna-GPT Enterprise is Live. URL for Twilio: /whatsapp"
 
 @app.route("/download/<filename>")
 def download(filename): return send_from_directory(PDF_FOLDER, filename)
 
 @app.route("/whatsapp", methods=['POST'])
 def whatsapp():
+    print("Incoming WhatsApp Request...") # Logging for Debugging
     try:
         msg = request.values.get('Body', '').strip()
         sender = request.values.get('From', '').replace("whatsapp:", "")
+        print(f"From: {sender} | Msg: {msg}") # Logging
+        
         resp = MessagingResponse()
         reply = resp.message()
         
@@ -147,6 +151,7 @@ def whatsapp():
         
         # 1. GREETING (Expanded Menu)
         if m in ['hi', 'hello', 'menu', 'start', 'help']:
+            print("Matched Greeting")
             reply.body("🇮🇳 *Namaste! Welcome to Yojna-GPT Enterprise*\n"
                        "The #1 Govt Scheme Super App.\n\n"
                        "🚀 *Feature Menu:*\n"
@@ -244,6 +249,7 @@ def whatsapp():
                 results.append(s)
         
         if results:
+            print(f"DB Match found: {len(results)}")
             txt = f"🔍 *Found {len(results)} Schemes:*\n\n"
             for x in results[:3]:
                 txt += (f"📌 *{x['title']}* (ID: {x['id']})\n"
@@ -253,6 +259,7 @@ def whatsapp():
         
         # 11. AI FALLBACK
         else:
+            print("Checking AI...")
             ai_txt = get_ai_response(f"Explain Indian Govt Scheme for '{msg}'. Keep it short.")
             if ai_txt:
                 reply.body(ai_txt)
@@ -262,7 +269,7 @@ def whatsapp():
         return str(resp)
 
     except Exception as e:
-        print(f"ERROR: {e}")
+        print(f"CRITICAL ERROR: {e}")
         r = MessagingResponse()
         r.message("⚠️ System updating. Type 'Hi' to restart.")
         return str(r)
