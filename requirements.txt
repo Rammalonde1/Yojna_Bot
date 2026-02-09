@@ -1,9 +1,5 @@
 flask
 twilio
-pandas
-google-generativeai
-pypdf
-gunicorn
-thefuzz
-python-levenshtein
 reportlab
+google-generativeai
+gunicorn
