@@ -17,259 +17,164 @@ API_KEY = "AIzaSyCshP-OBAHoq6VLHhtIHRebx0Q0AcUD5Yo"
 PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER): os.makedirs(PDF_FOLDER)
 
-# --- INTERNAL DATABASE (50+ Schemes) ---
+# --- INTERNAL DATABASE ---
 SCHEMES_DB = [
-    # BUSINESS
-    {"id": 1, "title": "PMEGP Loan", "cat": "Business", "desc": "Subsidy up to 35% on loans up to 50 Lakhs.", "tags": "factory manufacturing loan business"},
-    {"id": 2, "title": "MUDRA Loan (Shishu)", "cat": "Business", "desc": "Loan up to ₹50,000 for startups.", "tags": "small shop vendor startup"},
-    {"id": 3, "title": "MUDRA Loan (Kishore)", "cat": "Business", "desc": "Loan ₹50k to ₹5 Lakhs.", "tags": "expansion trade shop"},
-    {"id": 4, "title": "MUDRA Loan (Tarun)", "cat": "Business", "desc": "Loan up to ₹10 Lakhs (No Collateral).", "tags": "big business trade"},
-    {"id": 5, "title": "Stand-Up India", "cat": "Business", "desc": "10L-1Cr Loan for SC/ST/Women.", "tags": "dalit women entrepreneur"},
-    {"id": 6, "title": "PM SVANidhi", "cat": "Business", "desc": "₹50k Micro-credit for Street Vendors.", "tags": "hawker thela food truck"},
-    {"id": 7, "title": "Startup India Seed Fund", "cat": "Business", "desc": "₹20L Grant for Prototypes.", "tags": "tech app innovation cloud software"},
-    {"id": 8, "title": "Credit Guarantee (CGTMSE)", "cat": "Business", "desc": "Govt guarantee for loans up to ₹5 Cr.", "tags": "collateral free security"},
-    
-    # FARMING
-    {"id": 9, "title": "PM Kisan Samman Nidhi", "cat": "Farming", "desc": "₹6,000/year income support.", "tags": "farmer money agriculture land"},
-    {"id": 10, "title": "Kisan Credit Card (KCC)", "cat": "Farming", "desc": "Low interest crop loans (4%).", "tags": "crop loan bank card"},
-    {"id": 11, "title": "National Livestock Mission", "cat": "Farming", "desc": "50% Subsidy for Goat/Poultry.", "tags": "goat sheep chicken animal"},
-    {"id": 12, "title": "PM Kusum (Solar Pump)", "cat": "Farming", "desc": "60% Subsidy on Water Pumps.", "tags": "irrigation water solar"},
-    {"id": 13, "title": "Agri Infra Fund", "cat": "Farming", "desc": "Loans for Warehouses/Cold Storage.", "tags": "storage godown harvest"},
-    {"id": 14, "title": "PM Fasal Bima", "cat": "Farming", "desc": "Crop Insurance against rain/drought.", "tags": "insurance damage rain"},
-    
-    # SKILLS & WOMEN
-    {"id": 15, "title": "PM Vishwakarma", "cat": "Skills", "desc": "Loan @ 5% + ₹15k Toolkits.", "tags": "artisan carpenter tailor blacksmith"},
-    {"id": 16, "title": "Lakhpati Didi", "cat": "Women", "desc": "Skill training for SHG Women.", "tags": "women self help group drone"},
-    {"id": 17, "title": "Mahila Samman Savings", "cat": "Women", "desc": "7.5% Interest Savings Certificate.", "tags": "save bank deposit lady"},
-    {"id": 18, "title": "Sukanya Samriddhi", "cat": "Women", "desc": "8.2% Interest for Girl Child.", "tags": "daughter girl education marriage"},
-    {"id": 19, "title": "DDU-GKY Skills", "cat": "Skills", "desc": "Free Job Training for Rural Youth.", "tags": "job placement training course"},
-    
-    # HOUSING & HEALTH
-    {"id": 20, "title": "PM Awas (Urban)", "cat": "Housing", "desc": "Home Loan Interest Subsidy.", "tags": "home house flat city loan"},
-    {"id": 21, "title": "PM Awas (Gramin)", "cat": "Housing", "desc": "Cash for building village house.", "tags": "village rural construction"},
-    {"id": 22, "title": "Ayushman Bharat", "cat": "Health", "desc": "₹5 Lakh Free Health Insurance.", "tags": "hospital medical treatment sick"},
-    {"id": 23, "title": "Rooftop Solar", "cat": "Energy", "desc": "₹78k Subsidy for Home Solar.", "tags": "solar panel electric bill power"},
-    {"id": 24, "title": "Ujjwala Yojana", "cat": "Energy", "desc": "Free LPG Connection.", "tags": "gas cylinder cooking fuel"},
-    
-    # STUDENTS
-    {"id": 25, "title": "Vidya Lakshmi Loan", "cat": "Education", "desc": "Easy Education Loans.", "tags": "student college study abroad"},
-    {"id": 26, "title": "National Scholarship", "cat": "Education", "desc": "Scholarships for Merit/SC/ST.", "tags": "money school fees"},
-    
-    # INDUSTRY
-    {"id": 27, "title": "PLI Textile", "cat": "Industry", "desc": "Incentives for Textile Mfg.", "tags": "cloth fabric cotton garment"},
-    {"id": 28, "title": "FAME II EV", "cat": "Industry", "desc": "Subsidy on Electric Vehicles.", "tags": "car bike scooter ev battery"},
-    {"id": 29, "title": "ZED Certification", "cat": "Industry", "desc": "Subsidy on ISO/Quality Certs.", "tags": "quality iso msme certificate"},
-    {"id": 30, "title": "PM DIVINE", "cat": "Regional", "desc": "Development fund for NE India.", "tags": "north east infrastructure"}
+    {"id": 1, "title": "PMEGP Loan", "cat": "Business", "tags": "factory manufacturing loan business money fund", "desc": "Subsidy up to 35% on loans up to 50 Lakhs."},
+    {"id": 2, "title": "MUDRA Loan (Shishu)", "cat": "Business", "tags": "small shop vendor startup store", "desc": "Loan up to ₹50,000 for startups."},
+    {"id": 3, "title": "MUDRA Loan (Kishore)", "cat": "Business", "tags": "expansion trade shop business", "desc": "Loan ₹50k to ₹5 Lakhs."},
+    {"id": 4, "title": "PM SVANidhi", "cat": "Business", "tags": "hawker thela food truck street vendor", "desc": "₹50k Micro-credit for Street Vendors."},
+    {"id": 5, "title": "Startup India Seed Fund", "cat": "Business", "tags": "tech app innovation cloud software internet mobile", "desc": "₹20L Grant for Prototypes."},
+    {"id": 6, "title": "PM Kisan Samman Nidhi", "cat": "Farming", "tags": "farmer money agriculture land crop", "desc": "₹6,000/year income support."},
+    {"id": 7, "title": "Kisan Credit Card", "cat": "Farming", "tags": "crop loan bank card kcc", "desc": "Low interest crop loans (4%)."},
+    {"id": 8, "title": "PM Vishwakarma", "cat": "Skills", "tags": "artisan carpenter tailor blacksmith tools", "desc": "Loan @ 5% + ₹15k Toolkits."},
+    {"id": 9, "title": "Lakhpati Didi", "cat": "Women", "tags": "women self help group drone shg", "desc": "Skill training for SHG Women."},
+    {"id": 10, "title": "Mahila Samman Savings", "cat": "Women", "tags": "save bank deposit lady woman wife", "desc": "7.5% Interest Savings Certificate."},
+    {"id": 11, "title": "Sukanya Samriddhi", "cat": "Women", "tags": "daughter girl education marriage child", "desc": "8.2% Interest for Girl Child."},
+    {"id": 12, "title": "PM Awas (Urban)", "cat": "Housing", "tags": "home house flat city loan construction", "desc": "Home Loan Interest Subsidy."},
+    {"id": 13, "title": "Ayushman Bharat", "cat": "Health", "tags": "hospital medical treatment sick health", "desc": "₹5 Lakh Free Health Insurance."},
+    {"id": 14, "title": "Rooftop Solar", "cat": "Energy", "tags": "solar panel electric bill power sun", "desc": "₹78k Subsidy for Home Solar."},
+    {"id": 15, "title": "Vidya Lakshmi Loan", "cat": "Education", "tags": "student college study abroad education", "desc": "Easy Education Loans."}
 ]
 
-# --- 2. ADVANCED PDF ENGINE (Dual Mode) ---
+# --- PDF ENGINE ---
 def generate_pdf(type, data_dict):
     filename = f"{type}_{data_dict['phone'][-4:]}_{random.randint(100,999)}.pdf"
     filepath = os.path.join(PDF_FOLDER, filename)
-    
     c = canvas.Canvas(filepath, pagesize=letter)
-    width, height = letter
     
     if type == "Card":
-        # IDENTITY CARD MODE
-        c.setStrokeColor(colors.black)
         c.setFillColor(colors.aliceblue)
-        c.rect(150, 450, 300, 180, fill=1) # Card Shape
-        
+        c.rect(150, 450, 300, 180, fill=1)
         c.setFillColor(colors.darkblue)
-        c.rect(150, 580, 300, 50, fill=1) # Header
-        
+        c.rect(150, 580, 300, 50, fill=1)
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 16)
         c.drawCentredString(300, 600, "YOJNA-GPT MEMBER")
-        
         c.setFillColor(colors.black)
         c.setFont("Helvetica", 12)
-        c.drawString(170, 560, f"Name: Preferred User")
-        c.drawString(170, 540, f"Mobile: +{data_dict['phone']}")
-        c.drawString(170, 520, f"ID: YJ-{random.randint(1000,9999)}")
-        c.drawString(170, 500, f"Status: VERIFIED")
-        
-        c.setFont("Helvetica-Oblique", 10)
-        c.drawCentredString(300, 460, "Official Beneficiary Card")
-        
+        c.drawString(170, 550, f"Name: User {data_dict['phone'][-4:]}")
+        c.drawString(170, 530, f"ID: YJ-{random.randint(1000,9999)}")
+        c.drawString(170, 510, f"Status: VERIFIED")
     else:
-        # APPLICATION MODE
         c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(width/2, height-50, "GOVERNMENT SCHEME RECEIPT")
-        
-        c.line(50, height-60, width-50, height-60)
-        
+        c.drawString(100, 700, "SCHEME APPLICATION RECEIPT")
         c.setFont("Helvetica", 12)
-        y = height - 100
-        for key, value in data_dict.items():
-            c.drawString(100, y, f"{key}:")
-            c.drawString(250, y, f"{value}")
-            y -= 20
-            
-        c.rect(50, y-20, width-100, height-y+20)
-        c.drawString(50, 50, "* Submit this at your nearest CSC Center.")
-
+        y = 650
+        for k, v in data_dict.items():
+            c.drawString(100, y, f"{k}: {v}")
+            y -= 25
     c.save()
     return filename
 
-# --- 3. ROBUST AI ENGINE ---
-def get_ai_response(prompt):
+# --- FAIL-SAFE AI ---
+def get_ai_reply(query):
+    # 1. Try Google AI
     try:
-        if API_KEY:
-            genai.configure(api_key=API_KEY)
-            # Switch to 'gemini-pro' as it is more stable for text
-            model = genai.GenerativeModel('gemini-pro')
-            res = model.generate_content(prompt)
-            return f"🤖 *AI Insight:*\n{res.text}"
+        genai.configure(api_key=API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        res = model.generate_content(f"Explain Indian Govt Scheme for '{query}' in 2 sentences.")
+        return f"🤖 *AI Insight:*\n{res.text}"
     except Exception as e:
-        print(f"AI Error: {e}")
-        return None
+        print(f"[LOG] AI Failed: {e}") # This prints to Render Logs
+    
+    # 2. Smart Backup (If AI fails)
+    q = query.lower()
+    if "loan" in q or "fund" in q: return "🤖 *AI (Backup):* For funding, check **PMEGP** (ID 1) or **Mudra Loan** (ID 2)."
+    if "student" in q: return "🤖 *AI (Backup):* Students can check **Vidya Lakshmi Loans** (ID 15)."
+    return "🤖 *AI (Backup):* Network busy. Try searching 'Loan', 'Farm', or 'Solar'."
 
-# --- 4. MAIN ROUTER ---
+# --- ROUTER ---
 @app.route("/", methods=['GET'])
-def health(): 
-    # Use this to verify the app is running in browser
-    return "✅ Yojna-GPT Enterprise is Live. URL for Twilio: /whatsapp"
+def health(): return "✅ Yojna-GPT is Live"
 
 @app.route("/download/<filename>")
 def download(filename): return send_from_directory(PDF_FOLDER, filename)
 
 @app.route("/whatsapp", methods=['POST'])
 def whatsapp():
-    print("Incoming WhatsApp Request...") # Logging for Debugging
     try:
-        msg = request.values.get('Body', '').strip()
+        msg = request.values.get('Body', '').strip().lower()
         sender = request.values.get('From', '').replace("whatsapp:", "")
-        print(f"From: {sender} | Msg: {msg}") # Logging
-        
         resp = MessagingResponse()
         reply = resp.message()
-        
-        # --- COMMAND PROCESSING ---
-        m = msg.lower()
-        
-        # 1. GREETING (Expanded Menu)
-        if m in ['hi', 'hello', 'menu', 'start', 'help']:
-            print("Matched Greeting")
-            reply.body("🇮🇳 *Namaste! Welcome to Yojna-GPT Enterprise*\n"
-                       "The #1 Govt Scheme Super App.\n\n"
-                       "🚀 *Feature Menu:*\n"
-                       "1️⃣ *@Card* : Get Membership ID\n"
-                       "2️⃣ *@Idea <Budget>* : Business Ideas\n"
-                       "3️⃣ *@Calc <Amt>* : Subsidy Calc\n"
-                       "4️⃣ *@EMI <Amt>* : Loan EMI Calc\n"
-                       "5️⃣ *@News* : Latest Updates\n"
-                       "6️⃣ *@Bank* : Find Banks\n"
-                       "7️⃣ *@Center* : Find CSC\n"
-                       "8️⃣ *@Docs* : Checklist\n"
-                       "9️⃣ *@Share* : Share Bot\n"
-                       "🔟 *@Complaint* : Log Grievance\n\n"
-                       "🔍 *Or Search:* 'Textile', 'Solar', 'Loan'")
+
+        # 1. PRIORITY GREETING (No AI)
+        if msg in ['hi', 'hello', 'menu', 'start', 'help', 'hey', 'h']:
+            reply.body("🇮🇳 *Welcome to Yojna-GPT Enterprise*\n\n"
+                       "🔥 *Menu:*\n"
+                       "1️⃣ *@Card* : Membership ID\n"
+                       "2️⃣ *@Calc <Amt>* : Subsidy Calc\n"
+                       "3️⃣ *@EMI <Amt>* : EMI Calc\n"
+                       "4️⃣ *@Docs* : Checklist\n"
+                       "5️⃣ *@Share* : Share Bot\n"
+                       "6️⃣ *@Bank* : Find Banks\n\n"
+                       "🔍 *Search:* 'Textile', 'Solar', 'Loan'")
             return str(resp)
 
-        # 2. GENERATE ID CARD (@Card)
-        if m.startswith("@card"):
+        # 2. FEATURES
+        if msg.startswith("@card"):
             pdf = generate_pdf("Card", {"phone": sender})
-            link = f"{request.host_url}download/{pdf}"
-            reply.body(f"💳 *Here is your Digital ID Card!*\n\nShow this at CSC centers for priority support.\n\n⬇️ {link}")
+            reply.body(f"💳 *ID Card Generated!*\n⬇️ {request.host_url}download/{pdf}")
             return str(resp)
 
-        # 3. BUSINESS IDEAS (@Idea)
-        if m.startswith("@idea"):
-            budget = m.split()[1] if len(m.split()) > 1 else "Low Investment"
-            ai_idea = get_ai_response(f"Suggest 3 business ideas for {budget} budget in India.")
-            if ai_idea:
-                reply.body(ai_idea)
-            else:
-                reply.body("💡 *Business Ideas:*\n1. Kirana Store\n2. Flour Mill\n3. Tea Stall")
-            return str(resp)
-
-        # 4. EMI CALCULATOR (@EMI)
-        if m.startswith("@emi"):
+        if msg.startswith("@calc"):
             try:
-                amt = int(m.split()[1])
-                rate = 10 / (12 * 100) # 10% Interest
-                time = 5 * 12 # 5 Years
-                emi = (amt * rate * pow(1+rate, time)) / (pow(1+rate, time) - 1)
-                reply.body(f"🧮 *Loan EMI Estimator*\n\nLoan: ₹{amt:,}\nRate: 10%\nTenure: 5 Years\n\n*Monthly EMI: ₹{int(emi):,}*")
+                amt = int(msg.split()[1])
+                reply.body(f"💰 *Subsidy Calc*\nLoan: ₹{amt:,}\nSubsidy (35%): ₹{int(amt*0.35):,}\nRepayable: ₹{int(amt*0.65):,}")
+            except:
+                reply.body("❌ Usage: @Calc <Amount>")
+            return str(resp)
+
+        if msg.startswith("@emi"):
+            try:
+                amt = int(msg.split()[1])
+                emi = (amt * 0.0083 * pow(1.0083, 60)) / (pow(1.0083, 60) - 1)
+                reply.body(f"🧮 *EMI Calc*\nLoan: ₹{amt:,}\nTenure: 5 Years\nMonthly EMI: ₹{int(emi):,}")
             except:
                 reply.body("❌ Usage: @EMI <Amount>")
             return str(resp)
-
-        # 5. NEWS UPDATES (@News)
-        if m.startswith("@news"):
-            reply.body("📰 *Govt Scheme News (Live)*\n\n"
-                       "• PMEGP limit increased to 50 Lakhs.\n"
-                       "• Solar Subsidy now credited in 24 hours.\n"
-                       "• New 'Lakhpati Didi' targets 2 Crore women.\n"
-                       "• Pan-Aadhar link mandatory for loans.")
+            
+        if msg.startswith("@bank"):
+            reply.body("🏦 *Nodal Banks:*\n1. SBI\n2. Bank of Baroda\n3. Canara Bank")
             return str(resp)
 
-        # 6. BANK FINDER (@Bank)
-        if m.startswith("@bank"):
-            reply.body("🏦 *Nodal Banks near you:*\n\n"
-                       "1. SBI (Main Branch) - Agri/Biz Loans\n"
-                       "2. Bank of Baroda - Mudra Specialist\n"
-                       "3. Canara Bank - MSME Hub\n"
-                       "4. Union Bank - Education Loans")
-            return str(resp)
-        
-        # 7. COMPLAINT LOG (@Complaint)
-        if m.startswith("@complaint"):
-            t_id = random.randint(1000,9999)
-            reply.body(f"📝 *Complaint Registered*\n\nTicket ID: #{t_id}\nPriority: High\n\nOur nodal officer will call you within 24 hours.")
+        if msg.startswith("@docs"):
+            reply.body("📂 *Docs Needed:*\n1. Aadhar\n2. PAN\n3. Udyam Reg\n4. Project Report")
             return str(resp)
 
-        # 8. SHARE BOT (@Share)
-        if m.startswith("@share"):
-            reply.body("🔗 *Share Yojna-GPT with friends:*\n\nhttps://wa.me/14155238886?text=Hi\n\nHelp others get subsidies!")
+        if msg.startswith("@share"):
+            reply.body("🔗 Share: https://wa.me/14155238886?text=Hi")
             return str(resp)
 
-        # 9. APPLY COMMAND
-        if m.startswith("apply"):
+        # 3. APPLY
+        if msg.startswith("apply"):
             try:
-                sid = int(m.split()[1])
+                sid = int(msg.split()[1])
                 s = next((x for x in SCHEMES_DB if x['id'] == sid), None)
                 if s:
-                    data = {"Scheme": s['title'], "ID": f"SCH-{sid}", "Mobile": sender, "Date": "Today"}
-                    pdf = generate_pdf("Application", data)
-                    link = f"{request.host_url}download/{pdf}"
-                    reply.body(f"✅ *Application Submitted!*\nScheme: {s['title']}\n📄 {link}")
+                    pdf = generate_pdf("App", {"Scheme": s['title'], "phone": sender})
+                    reply.body(f"✅ *Applied for {s['title']}*\n⬇️ {request.host_url}download/{pdf}")
                 else:
                     reply.body("❌ Invalid ID.")
             except:
                 reply.body("❌ Usage: Apply <ID>")
             return str(resp)
 
-        # 10. CORE SEARCH ENGINE
-        results = []
-        for s in SCHEMES_DB:
-            if any(t in m for t in s['tags'].split()) or m in s['title'].lower():
-                results.append(s)
-        
+        # 4. DATABASE SEARCH (No AI)
+        results = [s for s in SCHEMES_DB if msg in s['tags'] or msg in s['title'].lower()]
         if results:
-            print(f"DB Match found: {len(results)}")
             txt = f"🔍 *Found {len(results)} Schemes:*\n\n"
             for x in results[:3]:
-                txt += (f"📌 *{x['title']}* (ID: {x['id']})\n"
-                        f"💰 {x['desc']}\n"
-                        f"👉 Apply: *Apply {x['id']}* | 📂 Docs: *@Docs*\n\n")
+                txt += f"📌 *{x['title']}* (ID: {x['id']})\n💰 {x['desc']}\n👉 Reply *Apply {x['id']}*\n\n"
             reply.body(txt)
-        
-        # 11. AI FALLBACK
-        else:
-            print("Checking AI...")
-            ai_txt = get_ai_response(f"Explain Indian Govt Scheme for '{msg}'. Keep it short.")
-            if ai_txt:
-                reply.body(ai_txt)
-            else:
-                reply.body("⚠️ Network Busy. Try keywords: Loan, Farm, Student.")
+            return str(resp)
 
+        # 5. AI FALLBACK
+        reply.body(get_ai_reply(msg))
         return str(resp)
 
     except Exception as e:
-        print(f"CRITICAL ERROR: {e}")
+        # Emergency Response
         r = MessagingResponse()
         r.message("⚠️ System updating. Type 'Hi' to restart.")
         return str(r)
