@@ -13,7 +13,7 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-API_KEY = "AIzaSyCshP-OBAHoq6VLHhtIHRebx0Q0AcUD5Yo"
+API_KEY = "AIzaSyC6G3jfWF-hMyFyIlEU-VtkdQ1gez_lXRM"
 PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER): os.makedirs(PDF_FOLDER)
 
