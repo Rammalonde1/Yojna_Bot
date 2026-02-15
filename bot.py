@@ -5,10 +5,7 @@ from flask import Flask, request, Response, send_from_directory
 from twilio.twiml.messaging_response import MessagingResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import inch
 import google.generativeai as genai
 
 app = Flask(__name__)
@@ -18,7 +15,7 @@ API_KEY = "AIzaSyCshP-OBAHoq6VLHhtIHRebx0Q0AcUD5Yo"
 PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER): os.makedirs(PDF_FOLDER)
 
-# --- INTERNAL DATABASE (EXPANDED) ---
+# --- 1. INTERNAL DATABASE (EXPANDED) ---
 SCHEMES_DB = [
     # BUSINESS & LOANS
     {"id": 1, "title": "PMEGP Loan", "cat": "Biz", "tags": "factory loan business manufacturing", "desc": "Subsidy up to 35% (Max 50L)."},
@@ -46,7 +43,7 @@ SCHEMES_DB = [
     {"id": 20, "title": "FAME II EV", "cat": "Auto", "tags": "electric vehicle car", "desc": "Subsidy on EV."}
 ]
 
-# --- PROFESSIONAL PDF ENGINE (Visual Upgrade) ---
+# --- 2. PROFESSIONAL PDF ENGINE (Visual Upgrade) ---
 def generate_pdf(type, data):
     filename = f"{type}_{data['phone'][-4:]}_{random.randint(100,999)}.pdf"
     filepath = os.path.join(PDF_FOLDER, filename)
@@ -59,7 +56,7 @@ def generate_pdf(type, data):
     
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 24)
-    c.drawCentredString(width/2, height-50, "GOVERNMENT OF INDIA SCHEMES")
+    c.drawCentredString(width/2, height-50, "GOVERNMENT SCHEME PORTAL")
     c.setFont("Helvetica", 12)
     c.drawCentredString(width/2, height-75, "DIGITAL FACILITATION CENTER")
 
@@ -111,7 +108,7 @@ def generate_pdf(type, data):
     c.save()
     return filename
 
-# --- SMART OFFLINE BRAIN (Free AI) ---
+# --- 3. SMART OFFLINE BRAIN (The "Free AI") ---
 # This runs if Google AI fails. It detects intent intelligently.
 def smart_offline_ai(query):
     q = query.lower()
@@ -127,7 +124,7 @@ def smart_offline_ai(query):
         return "🤖 *AI:* I apologize if I made a mistake. I am still learning. Try searching for 'Loan' or 'Farm'."
 
     # 2. Scheme Matching
-    if "loan" in q or "money" in q or "fund" in q:
+    if "loan" in q or "money" in q or "fund" in q or "capital" in q:
         return "🤖 *AI:* Based on your request for funds, I recommend **PMEGP** (ID 1) for large loans or **Mudra** (ID 2) for small business loans."
     
     if "farm" in q or "agri" in q or "crop" in q:
@@ -142,7 +139,7 @@ def smart_offline_ai(query):
     # 3. Default Fallback
     return "🤖 *AI:* I found several schemes in our database. You can try searching for categories like: \n- *Business*\n- *Farming*\n- *Education*\n- *Housing*"
 
-# --- AI ENGINE (Hybrid) ---
+# --- 4. HYBRID AI ENGINE ---
 def get_ai_reply(query):
     # Try Google AI first
     try:
@@ -153,10 +150,10 @@ def get_ai_reply(query):
         return f"🤖 *Google AI:*\n{res.text}"
     except Exception as e:
         print(f"Google AI Failed: {e}")
-        # Switch to Offline Brain
+        # Switch to Offline Brain if Google fails
         return smart_offline_ai(query)
 
-# --- ROUTER ---
+# --- 5. ROUTES ---
 @app.route("/", methods=['GET'])
 def health(): return "✅ Yojna-GPT Enterprise Live"
 
