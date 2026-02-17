@@ -12,16 +12,19 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- SECURE CONFIGURATION (NO HARDCODING) ---
-# We fetch the key from the Server Environment.
-# On Render, you will add this in "Environment Variables"
-API_KEY = os.environ.get("GOOGLE_API_KEY")
+# --- CONFIGURATION ---
+# PASTE YOUR KEY HERE DIRECTLY TO FIX THE ISSUE
+# (Replace the text inside the quotes with your AIza... key)
+API_KEY = "AIzaSyAAzjt63ASTcECUKMiyQFvacSxyLxoa6TE"
+
+# Fallback to environment if not set above
+if API_KEY == "PASTE_YOUR_GOOGLE_API_KEY_HERE":
+    API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER): os.makedirs(PDF_FOLDER)
 
-# --- 1. THE MASSIVE SCHEME DATABASE (Top 60+) ---
-# Categorized for faster searching
+# --- 1. MASSIVE SCHEME DATABASE (60+ Entries) ---
 SCHEMES_DB = [
     # BUSINESS & MSME
     {"id": 101, "title": "PMEGP Loan", "cat": "Biz", "tags": "factory loan business manufacturing subsidy", "desc": "Subsidy up to 35% (Max 50L) for new units."},
@@ -147,43 +150,50 @@ def generate_pdf(type, data):
 # --- 3. SMART OFFLINE BRAIN (The "Free AI" Backup) ---
 def smart_offline_ai(query):
     q = query.lower()
-    if any(x in q for x in ["hi", "hello", "help", "start"]):
-        return "🇮🇳 *Namaste!* I am Yojna-GPT. I can help you find loans, subsidies, and schemes.\n\n*Try searching for:* 'Business Loan', 'Farming', 'Student', or 'Women'."
+    
+    # Casual Conversation Handling
+    if any(x in q for x in ["hi", "hello", "help", "start", "hey"]):
+        return "🇮🇳 *Namaste!* I am Yojna-GPT. I can help you find loans, subsidies, and government schemes.\n\n*Try searching for:* 'Business Loan', 'Farming', 'Student', or 'Women'."
+    if any(x in q for x in ["how are you", "who are you", "bot"]):
+        return "🤖 *Yojna-GPT:* I am an AI assistant for Indian Government Schemes. I am here to help you get funding and benefits."
+    if any(x in q for x in ["bye", "goodnight", "stop"]):
+        return "👋 Goodbye! Feel free to message anytime you need information on schemes."
+    if any(x in q for x in ["bad", "stupid", "mad", "useless"]):
+        return "🙏 I apologize if I couldn't help. I am constantly learning. Please try typing keywords like *'Loan'* or *'Farm'*."
+
+    # Contextual Logic
     if any(x in q for x in ["loan", "money", "fund", "capital"]):
-        return "🤖 *Offline AI:* For loans, check **PMEGP** (ID 101) or **Mudra** (ID 102). For farming, check **KCC** (ID 202)."
+        return "🤖 *Yojna-GPT:* For business loans, check **PMEGP** (ID 101) or **Mudra** (ID 102). For farming, check **KCC** (ID 202)."
     if "farm" in q or "agri" in q:
-        return "🤖 *Offline AI:* Farmers should check **PM Kisan** (ID 201) or **National Livestock** (ID 203)."
+        return "🤖 *Yojna-GPT:* Farmers should check **PM Kisan** (ID 201) or **National Livestock** (ID 203)."
     if "student" in q or "study" in q:
-        return "🤖 *Offline AI:* Students can apply for **Vidya Lakshmi Loans** (ID 501) or **Scholarships** (ID 502)."
+        return "🤖 *Yojna-GPT:* Students can apply for **Vidya Lakshmi Loans** (ID 501) or **Scholarships** (ID 502)."
     if "woman" in q or "lady" in q:
-        return "🤖 *Offline AI:* Check **Lakhpati Didi** (ID 301) or **Mahila Samman** (ID 302)."
-    return "🤖 *Offline AI:* I couldn't connect to the cloud, but I found schemes for you. Try searching by category like 'Health', 'Home', or 'Solar'."
+        return "🤖 *Yojna-GPT:* Check **Lakhpati Didi** (ID 301) or **Mahila Samman** (ID 302)."
+        
+    return "🤖 *Yojna-GPT:* I couldn't connect to the cloud right now, but I found relevant schemes in my database. Try searching for categories like 'Health', 'Home', or 'Solar'."
 
 # --- 4. OMNISCIENT AI ENGINE (Replies to Anything) ---
 def get_ai_reply(query):
-    # If no key is set, use Offline Brain immediately
-    if not API_KEY:
+    # Check if key is present
+    if not API_KEY or "PASTE_YOUR" in API_KEY:
         return smart_offline_ai(query)
 
     try:
         genai.configure(api_key=API_KEY)
-        # We use a broad prompt to handle "Anything on the Internet"
+        # Try Flash first (Faster)
         model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"""
-        You are an expert Indian Government Scheme Consultant.
-        User Query: "{query}"
-        
-        Instructions:
-        1. If the user asks about a specific scheme (even obscure ones), explain it clearly.
-        2. Mention Eligibility, Benefits, and How to Apply.
-        3. Keep the tone professional and helpful.
-        4. Keep it under 150 words.
-        """
-        res = model.generate_content(prompt)
+        res = model.generate_content(f"You are a helpful Indian Government Scheme expert. Answer this user query: '{query}'. Keep it under 100 words.")
         return f"🤖 *AI Assistant:*\n{res.text}"
     except Exception as e:
-        print(f"AI Failed: {e}")
-        return smart_offline_ai(query)
+        print(f"Flash AI Failed: {e}")
+        try:
+            # Fallback to Pro (More stable)
+            model = genai.GenerativeModel('gemini-pro')
+            res = model.generate_content(f"Answer this query about Indian Schemes: '{query}'")
+            return f"🤖 *AI Assistant:*\n{res.text}"
+        except:
+            return smart_offline_ai(query)
 
 # --- 5. ROUTES ---
 @app.route("/", methods=['GET'])
@@ -266,7 +276,15 @@ def whatsapp():
             return Response(str(resp), mimetype='application/xml')
 
         # 4. DATABASE SEARCH (High Precision)
-        # Matches exact tags OR partial title matches
+        # Check if user typed a number directly (e.g., "101")
+        if m.isdigit():
+            sid = int(m)
+            s = next((x for x in SCHEMES_DB if x['id'] == sid), None)
+            if s:
+                resp.message(f"📌 *{s['title']}* (ID: {s['id']})\n💰 {s['desc']}\n👉 Reply *Apply {s['id']}*\n\n")
+                return Response(str(resp), mimetype='application/xml')
+
+        # Text Search
         results = [s for s in SCHEMES_DB if m in s['tags'] or m in s['title'].lower()]
         
         if results:
