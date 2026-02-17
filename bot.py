@@ -13,13 +13,10 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-# PASTE YOUR KEY HERE DIRECTLY TO FIX THE ISSUE
-# (Replace the text inside the quotes with your AIza... key)
-API_KEY = "AIzaSyAAzjt63ASTcECUKMiyQFvacSxyLxoa6TE"
-
-# Fallback to environment if not set above
-if API_KEY == "PASTE_YOUR_GOOGLE_API_KEY_HERE":
-    API_KEY = os.environ.get("GOOGLE_API_KEY")
+# SECURITY UPDATE:
+# We fetch the key STRICTLY from the Server Environment.
+# Do NOT paste your key here. Set it in Render Dashboard -> Environment.
+API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 PDF_FOLDER = "applications"
 if not os.path.exists(PDF_FOLDER): os.makedirs(PDF_FOLDER)
@@ -175,8 +172,8 @@ def smart_offline_ai(query):
 
 # --- 4. OMNISCIENT AI ENGINE (Replies to Anything) ---
 def get_ai_reply(query):
-    # Check if key is present
-    if not API_KEY or "PASTE_YOUR" in API_KEY:
+    # Check if key is present in environment
+    if not API_KEY:
         return smart_offline_ai(query)
 
     try:
