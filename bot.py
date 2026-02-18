@@ -2,7 +2,7 @@ import os
 import datetime
 import random
 import csv
-from flask import Flask, request, Response, send_from_directory
+from flask import Flask, request, Response, send_from_directory, send_file
 from twilio.twiml.messaging_response import MessagingResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -14,15 +14,10 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-# 1. Try fetching from Environment (Secure)
+# SECURITY UPDATE:
+# We fetch the key STRICTLY from the Server Environment.
+# This prevents GitHub from banning your key.
 API_KEY = os.environ.get("GOOGLE_API_KEY")
-
-# 2. FAIL-SAFE: If Environment fails, use this hardcoded key
-# REPLACE THE TEXT BELOW WITH YOUR ACTUAL API KEY (starts with AIza...)
-API_KEY_BACKUP = "PASTE_YOUR_API_KEY_HERE"
-
-if not API_KEY or API_KEY == "None":
-    API_KEY = API_KEY_BACKUP
 
 PDF_FOLDER = "applications"
 LEADS_FILE = "customer_leads.csv"
@@ -97,39 +92,36 @@ def smart_offline_ai(query):
     q = query.lower()
     if any(x in q for x in ["hi", "hello", "hey", "start"]):
         return "🇮🇳 *Namaste!* I am Yojna-GPT. I can help you find loans and schemes.\n\n*Try asking:* 'Loan for factory' or 'Farming subsidy'."
-    if any(x in q for x in ["who are you", "bot", "ai"]):
-        return "🤖 I am an AI Agent designed to help Indians find government benefits."
-    if any(x in q for x in ["bye", "thanks", "good"]):
-        return "🙏 You're welcome! Type 'Hi' anytime you need help."
     if "loan" in q or "money" in q: return "🤖 *Recommendation:* For business loans, check **PMEGP** (ID 101) or **Mudra** (ID 102)."
     if "farm" in q: return "🤖 *Recommendation:* Farmers should check **PM Kisan** (ID 201)."
     if "student" in q: return "🤖 *Recommendation:* Students can check **Vidya Lakshmi** (ID 501)."
     
     return "🤖 *AI:* I found relevant schemes. Try searching for specific categories like 'Business', 'Health', or 'Education'."
 
-# --- UNIVERSAL AI ENGINE (Tries 4 Models) ---
+# --- UNIVERSAL AI ENGINE (Self-Healing) ---
 def get_ai_reply(query):
-    # Check if key exists
-    if not API_KEY or "PASTE_YOUR" in API_KEY:
-        print("[AI] Key Missing. Using Offline.")
+    # 1. Check if key exists
+    if not API_KEY:
+        print("[System] No API Key found in Environment.")
         return smart_offline_ai(query)
 
     genai.configure(api_key=API_KEY)
     
-    # Priority list of models to try
-    models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro']
+    # 2. Try Multiple Models (In case one is 404/Depracated)
+    # We try Flash (Newest) -> 1.0 Pro (Stable) -> Pro (Legacy)
+    models_to_try = ['gemini-1.5-flash', 'gemini-1.0-pro', 'gemini-pro']
     
-    for m in models:
+    for model_name in models_to_try:
         try:
-            model = genai.GenerativeModel(m)
+            model = genai.GenerativeModel(model_name)
             res = model.generate_content(f"Act as a professional Indian Government Scheme Consultant. Answer this briefly: {query}")
             return f"🤖 *AI Assistant:*\n{res.text}"
         except Exception as e:
-            print(f"[AI] Model {m} failed: {e}")
+            print(f"[System] Model {model_name} failed: {e}")
             continue # Try next model
             
-    # If all 4 models fail, use offline brain
-    print("[AI] All models failed. Using Offline.")
+    # 3. If all fail, use offline brain
+    print("[System] All AI models failed. Using Offline.")
     return smart_offline_ai(query)
 
 # --- ROUTES ---
@@ -142,7 +134,7 @@ def download(filename): return send_from_directory(PDF_FOLDER, filename)
 @app.route("/admin", methods=['GET'])
 def admin():
     if os.path.exists(LEADS_FILE):
-        return send_from_directory(".", LEADS_FILE)
+        return send_file(LEADS_FILE, as_attachment=True)
     return "No leads yet."
 
 @app.route("/whatsapp", methods=['POST'])
