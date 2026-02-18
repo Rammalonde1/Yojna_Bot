@@ -38,8 +38,8 @@ def save_lead(phone, category, details):
 SCHEMES_DB = [
     # BUSINESS
     {"id": 101, "title": "PMEGP Loan", "cat": "Biz", "tags": "factory loan business manufacturing subsidy money fund", "desc": "Subsidy up to 35% (Max 50L)."},
-    {"id": 102, "title": "MUDRA (Shishu)", "cat": "Biz", "tags": "small shop startup vendor tea", "desc": "Loan up to ₹50,000."},
-    {"id": 103, "title": "MUDRA (Tarun)", "cat": "Biz", "tags": "big business trade expansion", "desc": "Loan up to ₹10 Lakhs."},
+    {"id": 102, "title": "MUDRA (Shishu)", "cat": "Biz", "tags": "small shop startup vendor tea", "desc": "Loan up to ₹50,000 for starters."},
+    {"id": 103, "title": "MUDRA (Tarun)", "cat": "Biz", "tags": "expansion trade shop big business", "desc": "Loan up to ₹10 Lakhs."},
     {"id": 104, "title": "Stand-Up India", "cat": "Biz", "tags": "sc st women dalit lady entrepreneur", "desc": "10L-1Cr Loan."},
     {"id": 105, "title": "PM SVANidhi", "cat": "Biz", "tags": "street vendor hawker food truck", "desc": "₹50k Micro-credit."},
     {"id": 106, "title": "Startup India Seed", "cat": "Biz", "tags": "tech app cloud software internet", "desc": "₹20L Grant."},
