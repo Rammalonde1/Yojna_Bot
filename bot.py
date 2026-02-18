@@ -13,11 +13,12 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
-# SECURITY UPDATE:
-# We fetch the key STRICTLY from the Server Environment.
-# This prevents GitHub from banning your key.
-API_KEY = os.environ.get("GOOGLE_API_KEY")
+# --- CONFIGURATION & SECURITY ---
+# 1. Get Key
+raw_key = os.environ.get("GOOGLE_API_KEY", "")
+
+# 2. Sanitize Key (Fixes common user errors like spaces or quotes)
+API_KEY = raw_key.strip().replace('"', '').replace("'", "")
 
 PDF_FOLDER = "applications"
 LEADS_FILE = "customer_leads.csv"
@@ -38,8 +39,8 @@ def save_lead(phone, category, details):
 SCHEMES_DB = [
     # BUSINESS
     {"id": 101, "title": "PMEGP Loan", "cat": "Biz", "tags": "factory loan business manufacturing subsidy money fund", "desc": "Subsidy up to 35% (Max 50L)."},
-    {"id": 102, "title": "MUDRA (Shishu)", "cat": "Biz", "tags": "small shop startup vendor tea", "desc": "Loan up to ₹50,000 for starters."},
-    {"id": 103, "title": "MUDRA (Tarun)", "cat": "Biz", "tags": "expansion trade shop big business", "desc": "Loan up to ₹10 Lakhs."},
+    {"id": 102, "title": "MUDRA (Shishu)", "cat": "Biz", "tags": "small shop startup vendor tea", "desc": "Loan up to ₹50,000."},
+    {"id": 103, "title": "MUDRA (Tarun)", "cat": "Biz", "tags": "big business trade expansion", "desc": "Loan up to ₹10 Lakhs."},
     {"id": 104, "title": "Stand-Up India", "cat": "Biz", "tags": "sc st women dalit lady entrepreneur", "desc": "10L-1Cr Loan."},
     {"id": 105, "title": "PM SVANidhi", "cat": "Biz", "tags": "street vendor hawker food truck", "desc": "₹50k Micro-credit."},
     {"id": 106, "title": "Startup India Seed", "cat": "Biz", "tags": "tech app cloud software internet", "desc": "₹20L Grant."},
@@ -98,35 +99,35 @@ def smart_offline_ai(query):
     
     return "🤖 *AI:* I found relevant schemes. Try searching for specific categories like 'Business', 'Health', or 'Education'."
 
-# --- UNIVERSAL AI ENGINE (Self-Healing) ---
+# --- HIGH-SPEED AI ENGINE ---
 def get_ai_reply(query):
-    # 1. Check if key exists
-    if not API_KEY:
-        print("[System] No API Key found in Environment.")
+    # 1. Validation
+    if not API_KEY or len(API_KEY) < 30:
+        print("[System] API Key Invalid or Missing.")
         return smart_offline_ai(query)
 
-    genai.configure(api_key=API_KEY)
-    
-    # 2. Try Multiple Models (In case one is 404/Depracated)
-    # We try Flash (Newest) -> 1.0 Pro (Stable) -> Pro (Legacy)
-    models_to_try = ['gemini-1.5-flash', 'gemini-1.0-pro', 'gemini-pro']
-    
-    for model_name in models_to_try:
-        try:
-            model = genai.GenerativeModel(model_name)
-            res = model.generate_content(f"Act as a professional Indian Government Scheme Consultant. Answer this briefly: {query}")
-            return f"🤖 *AI Assistant:*\n{res.text}"
-        except Exception as e:
-            print(f"[System] Model {model_name} failed: {e}")
-            continue # Try next model
-            
-    # 3. If all fail, use offline brain
-    print("[System] All AI models failed. Using Offline.")
-    return smart_offline_ai(query)
+    try:
+        # 2. Configure
+        genai.configure(api_key=API_KEY)
+        
+        # 3. Use ONLY the fastest model to prevent timeout
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # 4. Generate
+        res = model.generate_content(f"Act as a professional Indian Government Scheme Consultant. Answer this briefly: {query}")
+        return f"🤖 *AI Assistant:*\n{res.text}"
+        
+    except Exception as e:
+        print(f"[System] AI Failed: {e}")
+        # Immediate Fallback to prevent Twilio Timeout
+        return smart_offline_ai(query)
 
 # --- ROUTES ---
 @app.route("/", methods=['GET'])
-def health(): return "✅ Yojna-GPT Live"
+def health():
+    # Debug info to check if Key is loaded
+    status = "Loaded ✅" if API_KEY and len(API_KEY) > 10 else "Missing ❌"
+    return f"✅ Yojna-GPT Live. API Key Status: {status}"
 
 @app.route("/download/<filename>")
 def download(filename): return send_from_directory(PDF_FOLDER, filename)
